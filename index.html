@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3 en Raya</title>
+    <style>
+        body { 
+            font-family: 'Arial', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background-color: #f0f0f0; 
+            margin: 0; 
+        }
+        h1 { 
+            color: #333; 
+        }
+        .container { 
+            text-align: center; 
+        }
+        .board { 
+            display: grid; 
+            grid-template-columns: repeat(3, 100px); 
+            grid-gap: 5px; 
+            margin-top: 20px; 
+        }
+        .cell { 
+            width: 100px; 
+            height: 100px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 2em; 
+            background-color: #fff; 
+            border: 2px solid #333; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+        }
+        .cell:hover { 
+            background-color: #f1f1f1; 
+        }
+        .hidden { 
+            display: none; 
+        }
+        button { 
+            background-color: #4CAF50; 
+            color: white; 
+            padding: 10px 20px; 
+            margin: 5px; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 1em; 
+            transition: background-color 0.3s; 
+        }
+        button:hover { 
+            background-color: #45a049; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>3 en Raya</h1>
+        <button onclick="startGame('human')">Jugar contra otra persona</button>
+        <button onclick="selectDifficulty()">Jugar contra la máquina</button>
+        <div id="difficulty" class="hidden">
+            <button onclick="startGame('easy')">Fácil</button>
+            <button onclick="startGame('medium')">Medio</button>
+            <button onclick="startGame('hard')">Difícil</button>
+        </div>
+        <div id="board" class="board hidden"></div>
+    </div>
+    <script>
+        let board, currentPlayer, gameMode;
+
+        function selectDifficulty() {
+            document.getElementById('difficulty').classList.remove('hidden');
+        }
+
+        function startGame(mode) {
+            gameMode = mode;
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            document.getElementById('board').classList.remove('hidden');
+            document.getElementById('difficulty').classList.add('hidden');
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const boardDiv = document.getElementById('board');
+            boardDiv.innerHTML = '';
+            board.forEach((cell, index) => {
+                const cellDiv = document.createElement('div');
+                cellDiv.classList.add('cell');
+                cellDiv.innerText = cell;
+                cellDiv.onclick = () => makeMove(index);
+                boardDiv.appendChild(cellDiv);
+            });
+        }
+
+        function makeMove(index) {
+            if (board[index] === '') {
+                board[index] = currentPlayer;
+                if (checkWin()) {
+                    alert(currentPlayer + ' gana!');
+                    startGame(gameMode);
+                } else if (board.every(cell => cell !== '')) {
+                    alert('Empate!');
+                    startGame(gameMode);
+                } else {
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    if (gameMode !== 'human' && currentPlayer === 'O') {
+                        makeMachineMove();
+                    }
+                    renderBoard();
+                }
+            }
+        }
+
+        function makeMachineMove() {
+            if (gameMode === 'easy') {
+                makeRandomMove();
+            } else if (gameMode === 'medium') {
+                if (!makeWinningMove()) {
+                    makeRandomMove();
+                }
+            } else if (gameMode === 'hard') {
+                if (!makeWinningMove()) {
+                    if (!blockOpponentWin()) {
+                        makeRandomMove();
+                    }
+                }
+            }
+            if (checkWin()) {
+                alert('O gana!');
+                startGame(gameMode);
+            } else if (board.every(cell => cell !== '')) {
+                alert('Empate!');
+                startGame(gameMode);
+            } else {
+                currentPlayer = 'X';
+                renderBoard();
+            }
+        }
+
+        function makeRandomMove() {
+            let emptyCells = board.map((cell, index) => cell === '' ? index : null).filter(index => index !== null);
+            let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            board[randomIndex] = 'O';
+        }
+
+        function makeWinningMove() {
+            return tryToWinOrBlock('O');
+        }
+
+        function blockOpponentWin() {
+            return tryToWinOrBlock('X');
+        }
+
+        function tryToWinOrBlock(player) {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            for (let pattern of winPatterns) {
+                let [a, b, c] = pattern;
+                if (board[a] === player && board[b] === player && board[c] === '') {
+                    board[c] = 'O';
+                    return true;
+                }
+                if (board[a] === player && board[c] === player && board[b] === '') {
+                    board[b] = 'O';
+                    return true;
+                }
+                if (board[b] === player && board[c] === player && board[a] === '') {
+                    board[a] = 'O';
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function checkWin() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            return winPatterns.some(pattern => 
+                pattern.every(index => board[index] === currentPlayer)
+            );
+        }
+    </script>
+</body>
+</html>
